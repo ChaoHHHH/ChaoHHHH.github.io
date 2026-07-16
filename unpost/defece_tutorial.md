@@ -116,13 +116,15 @@ It=  164 *END E=  -0.1056701988853E+06  Av_F=  0.39E-02 M_F=  0.16E-01 dE=  0.31
 
 2、对 Host 结构优化完成后，换 HSE 泛函进行一次 SCF 计算，注意最后计算出的带隙要合理
 
+下面的数据来自 OUT.OCC
+
 0.8063 - 7.7613 默认参数 alpha=0.25 omega=0.2 beta=0.0
 
 0.4094 - 8.1154 beta=0.25，其余默认
 
 -0.5820 - 8.2459 alpha=0.5，其余默认，计算时间从800+s 到了 1000+s 
 
-带隙大约 8.8 eV 足够合理，后续 HSE 计算使用 alpha=0.5，omega=0.2，beta=0.0
+带隙大约 8.8 eV ，足够合理，后续 HSE 计算使用 alpha=0.5，omega=0.2，beta=0.0
 ```
 16 1
 
@@ -205,3 +207,293 @@ out.stress = t
 4、同样的换 HSE 泛函进行一次 SCF 计算，输出所需的各种量
 
 参数同 Host ，但是开启自旋
+
+计算结束后检查 OUT.OCC
+
+```
+858     -0.6845   1.00000
+859     -0.6629   1.00000
+860     -0.5458   1.00000
+861      0.2317   1.00000
+862      8.2573   0.00000
+863      8.9108   0.00000
+```
+
+可以看到在带隙中 0.2317 eV 处出现了一个新的能级
+
+使用 plot_wg.x 绘制其波函数
+```
+(base) [11:29:32] ~/Work/Vo@SiO2/Vo_q0 $ plot_wg.x 
+ there are            1  kpoints # 此处只有一个 Gamma 点
+ input the ikpt to plot wg
+1 # 也只能选择第一个 k 点 ，即 Gamma 点，不过对于 Amor 结构而言，其实都一样
+ input the name of OUT.WG file
+OUT.WG # 开启自旋后还会输出一个 OUT.WG_2 这是另一个自旋，OUT.OCC 中被分为了两个自旋态，此处取第一个自旋态
+ input the name of xatom.config file
+atom.config # 结构文件
+ there are         1096 wavefunction, input ind im to plot
+861 # 能级编号
+ charge(G-space)=  0.999999999999995     
+ charge(R-space)=   1.00000000000000     
+ PSI^2 is written in PSI.xsf
+ real part of PSI is written in REAL_PSI.xsf
+ imaginary part of PSI is written in IMAG_PSI.xsf
+```
+上面整个过程表示，输出第1个k点（Gamma点）的 第 861 号能级的第 1 个自旋态的波函数
+
+图像如下
+
+![](./defect_tutorial_figs/Vo@SiO2_WF.png)
+
+波函数局域在缺陷附近，为一个典型的深能级缺陷
+
+检查 SPIN 2，861号能级也被占据，能级相同，感觉可以不开自旋...
+
+同时可以看一下 VBM 与 CBM 的波函数，也有其特点，分别是 860 和 862号，如下
+```
+(base) [11:48:50] ~/Work/Vo@SiO2/Vo_q0 $ echo -e "1\nOUT.WG\natom.config\n860\n" | plot_wg.x  # 这个指令更便捷
+ there are            1  kpoints
+ input the ikpt to plot wg
+ input the name of OUT.WG file
+ input the name of xatom.config file
+ there are         1096 wavefunction, input ind im to plot
+ charge(G-space)=  0.999999999999994     
+ charge(R-space)=  0.999999999999983     
+ PSI^2 is written in PSI.xsf
+ real part of PSI is written in REAL_PSI.xsf
+ imaginary part of PSI is written in IMAG_PSI.xsf
+```
+
+5、此时的缺陷为中性，上面占据一个电子（其实是两个），可以移走一个电子，使用参数
+```
+NUM_ELECTRON =   1722.00000000000
+```
+这个参数在 REPORT 中可以找到，这个是中性结构的价电子数，修改为 1721 即为移除一个电子，移除的这个电子为最高被占据能级的电子，所以需要保证这个能级为缺陷能级，就像这里一样，然后进行结构优化，输入参数如下，此时缺陷处于 +1 态
+```
+16 1
+job = relax 
+# scf
+rho_error = 1.0e-5
+e_error = 0.0 # 1.0e-5
+wg_error = 0.0
+ecut = 50
+ecut2 = 200
+mp_n123 = 1 1 1 0 0 0 0 
+xcfunctional = pbe 
+relax_detail = 1, 500, 0.02, 0, 0.01 
+# input
+in.atom = atom.config
+NUM_ELECTRON =   1721.00000000000 # 去掉一个电子
+spin = 2 
+## pseudo potential
+in.psp1 = Si.SG15.PBE.UPF
+in.psp2 = O.SG15.PBE.UPF
+# in.wg = t
+# in.rho = t
+# in.vr = t
+# in.kpt = t
+# output
+out.wg = f
+out.rho = f
+out.vr = f
+out.force = t
+out.stress = t
+out.vatom = f
+```
+
+6、结构优化后使用 HSE 进行 SCF 计算，输出所需结果
+```
+16 1
+
+job = scf 
+
+# scf
+rho_error = 1.0e-5
+e_error = 0.0 # 1.0e-5
+wg_error = 0.0
+ecut = 50
+ecut2 = 200
+mp_n123 = 1 1 1 0 0 0 0 
+
+xcfunctional = hse
+hse_omega = 0.2
+hse_alpha = 0.5
+hse_beta = 0.0
+
+# input
+in.atom = atom.config
+NUM_ELECTRON =   1721.00000000000 # 去掉一个电子
+spin = 2 
+
+## pseudo potential
+in.psp1 = Si.SG15.PBE.UPF
+in.psp2 = O.SG15.PBE.UPF
+
+# in.wg = t
+# in.rho = t
+# in.vr = t
+# in.kpt = t
+
+# output
+out.wg = t
+out.rho = t
+out.vr = t
+out.force = t
+out.stress = t
+out.vatom = t
+```
+
+查看 OUT.OCC
+```
+SPIN 1
+859     -0.6176   1.00000 
+860     -0.5898   1.00000 # VBM
+861     -0.3170   1.00000 # Defect
+862      7.4417   0.00000 # Defect ？
+863      8.2151   0.00000 # CBM
+SPIN 2
+859     -0.6167   1.00000
+860     -0.5896   1.00000 # VBM
+861      3.9015   0.00000 # Defect
+862      8.2414   0.00000 # CBM
+863      8.5865   0.00000
+```
+此处自旋就分开了，检查一下这些态的波函数
+
+7、化学势的计算
+
+这里只需要计算 O 的化学势
+
+> Todo
+
+8、数据处理
+
+到此为止，就计算了 Host 的数据，中性态 Vo@Host 的数据，+1态 Vo@Host 的数据，以及需要用到的化学势，将计算结果整理成这样的目录结构
+```
+├ calculate/
+│   ├── bulk/
+│   │   └── scf/
+│   │       ├── REPORT
+│   │       ├── atom.config 或 final.config
+│   │       └── OUT.VATOM
+│   └── Vo/
+│       ├── q_0/
+│       │   └── scf/
+│       │       ├── REPORT
+│       │       ├── atom.config 或 final.config
+│       │       ├── OUT.OCC
+│       │       └── OUT.VATOM
+│       ├── q_-1/
+│       │   └── scf/
+│       │       ├── REPORT
+│       │       ├── atom.config
+│       │       └── OUT.OCC
+│       └── q_1/
+│           └── scf/
+│               ├── REPORT
+│               ├── atom.config
+│               └── OUT.OCC
+```
+
+>脚本位置 ToDo
+
+设置 config.yaml
+```
+system:
+  name: "Vo in SiO2"
+  dielectric: 3.9
+  VBM: -0.582
+  gap: 8.8
+  elements: [Si, O]
+  chemical_potential:
+    O: -435.32
+structure:
+  defect_center:[0.392, 0.615, 0.403] # 这里有BUG，代码会先自动识别，失败后才会读取这里,可以代码中手动指定，batch_correction.py : 1017，谁来修一下 ~
+formation_energy:
+  charge: [0,1]
+  e_corr: true
+```
+执行
+```
+python batch_correction.py prepare
+```
+输出如下
+```
+(defect_my) [16:00:31] ~/Work/Vo@SiO2 $ python batch_correction.py prepare
+已加载配置: ***/Vo@SiO2/config.yaml
+project_root : ***/Vo@SiO2
+calc_dir : ***/Vo@SiO2/calculate
+============================================================
+  批量生成 defect.input
+============================================================
+检测到 1 个缺陷目录
+
+--- 缺陷: Vo ---
+  缺陷位置: 0.392000 0.615000 0.403000
+  带电态: [1]
+  已生成: ***/Vo@SiO2/calculate/Vo/q_1/scf/defect.input, ***/Vo@SiO2/calculate/Vo/q_0/scf/defect_+1.input, ***/Vo@SiO2/calculate/Vo/q_0/scf/defect_p1.input
+
+共生成 1 个 defect.input 文件
+
+接下来请在 HPC 上依次执行:
+
+  # Vo q=+1
+  cd ***/Vo@SiO2/calculate/Vo/q_1/scf
+  cp ***/Vo@SiO2/calculate/Vo/q_0/scf/OUT.OCC OUT.OCC0
+  cp OUT.OCC OUT.OCC1
+  bash ***/Vo@SiO2/1_get_rho.sh # 目录下的slurm脚本改成job.sh名称, 不然就改代码
+  bash ***/Vo@SiO2/2_coulomb_integral.sh # 等待任务计算完成
+  bash ***/Vo@SiO2/3_get_results.sh
+
+全部修正完成后，运行: python ***/Vo@SiO2/batch_correction.py collect
+```
+bash ***/Vo@SiO2/3_get_results.sh 的输出如下
+```
+----------------------- Coulomb ingetrals -------------------------
+E_\infty =  4.73619    E_P =  3.50710 
+ 
+ 
+------------------- Potential alignment -------------------
+The defect coordinates:  0.392000 0.615000 0.403000
+neutral: the farest atom from the defect coordinates, pot:
+ 126  0.92399  0.08799  0.90706 -43.474618965 -43.474618630
+bulk: the farest atom from the defect coordinates, pot:
+ 126  0.92416  0.08853  0.90791 -43.470489030
+ 
+--------------------Finished ( * ~ * )_Y-------------------
+```
+结果
+```
+已加载配置: ***/Vo@SiO2/config.yaml
+======================================================================
+  收集修正结果 & 计算形成能 / 转变能级
+======================================================================
+E_bulk = -105644.2550937 eV
+VBM = -0.582 eV
+Gap = 8.8 eV
+化学势: {'O': -435.32}
+介电常数: 3.9
+修正模式: both  (ICIC / PA)
+
+
+──────────────────────────────────────────────────
+缺陷: Vo
+  原子数变化: {'O': -1}
+  q=  0  E_raw= -105207.44654 eV  E_corr=   0.00000 eV  
+  q= +1  E_raw= -105209.42473 eV  E_corr=   0.31102 eV  ✓ ICIC+PA
+
+======================================================================
+  形成能 & 转变能级
+======================================================================
+
+--- Vo ---
+  E_f(q=0, E_F) = 1.48855 eV
+  E_f(q=+1, E_F) = -0.76062 + E_F  (eV)
+  ε(0/+1) = 2.2492 eV [带隙内]
+  YAML 结果已写入: ***/Vo@SiO2/result/defect_results.yaml
+  E_f 表格已写入: ***/Vo@SiO2/result/E_forms/E_formation_corrected_Vo.txt
+
+======================================================================
+  完成
+======================================================================
+```
