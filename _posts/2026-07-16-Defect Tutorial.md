@@ -610,3 +610,31 @@ out.force = t
 out.stress = t
 out.vatom = t
 ```
+结果如下
+```
+ E_tot(eV)            = -.10520768611642E+06    0.3040E-06
+ E_tot(eV)            = -.10520768611632E+06    0.1002E-06
+ E_tot(eV)            = -.10520768617434E+06    -.5802E-04
+ E_tot(eV)    = -.10520768617434E+06    -.5802E-04
+ E_tot(Ryd)   = -.77326223733708E+04    -.2132E-05
+ Energy PV (external_Pressure * Volume)(eV, not included in E_tot) =      0.00000000000000
+```
+现在就可以计算 $\lambda$
+
+$$
+\begin{aligned}
+\lambda_{0} &= E(0 state, Q_{+1}) - E(0 state, Q_{0}) \\
+&= -105205.66446 - (-105207.44654)\\
+&= 1.782 \space eV
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\lambda_{0} &= E(+1 state, Q_{0}) - E(+1 state, Q_{+1}) \\
+&= -105207.68617 - (-105209.42473)\\
+&= 1.739 \space eV
+\end{aligned}
+$$
+
+过于一致了吧，我的非谐效应去哪了？
