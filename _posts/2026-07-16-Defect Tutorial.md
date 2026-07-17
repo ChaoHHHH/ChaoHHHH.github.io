@@ -44,7 +44,7 @@ These different charge states may correspond to quite different local lattice co
 Ref. Freysoldt, C. et al. First-principles calculations for point defects in solids. Rev. Mod. Phys. 86, 253–305 (2014).
 
 ## 原子化学势
-如上所述，这里的化学势实际上是单质化合后所释放的能量，所以对于不同的化合物，计算出的原子的化学势并不一致，取决于实际的制备条件
+如上所述，这里的化学势实际上是单质化合后所释放的能量，所以对于不同的化合物，计算出的原子化学势并不一致，取决于实际的制备条件
 
 >ToDo 详细说明
 
@@ -70,6 +70,7 @@ Ref. Freysoldt, C. et al. First-principles calculations for point defects in sol
 6、汇总
 
 ## Example Vo@SiO2
+### Host 结构优化
 1、Host为包含324个原子的 Amor-SiO2 结构，对其进行结构优化，参数如下
 ```
 16 1
@@ -113,7 +114,7 @@ It=  162 CORR E=  -0.1056701985093E+06  Av_F=  0.52E-02 M_F=  0.35E-01 dE=  0.37
 It=  163  NEW E=  -0.1056701988853E+06  Av_F=  0.39E-02 M_F=  0.16E-01 dE=  0.31E-04 dRho=  0.91E-05 SCF=     4 dL=  0.35E-02 p*F= -0.30E-01 p*F0= -0.67E-01 Fch=  0.94E+00
 It=  164 *END E=  -0.1056701988853E+06  Av_F=  0.39E-02 M_F=  0.16E-01 dE=  0.31E-04 dRho=  0.91E-05 SCF=     4 dL=  0.35E-02 p*F= -0.30E-01 p*F0= -0.67E-01 Fch=  0.94E+00
 ```
-
+### Host SCF计算
 2、对 Host 结构优化完成后，换 HSE 泛函进行一次 SCF 计算，注意最后计算出的带隙要合理
 
 下面的数据来自 OUT.OCC
@@ -164,7 +165,7 @@ out.force = t
 out.stress = t
 out.vatom = t
 ```
-
+### Vo@Host 结构优化
 3、构建缺陷结构（在优化好的 Host 的合适的位置处挖去一个 O 原子），然后进行结构优化（不优化晶格），参数如下
 
 删除 Host 中的 Atom: 247  O139   O   0.41846   0.60278   0.44260  ( 0  0  0)+ x, y, z
@@ -203,7 +204,7 @@ out.vr = f
 out.force = t
 out.stress = t
 ```
-
+### Vo@Host SCF计算
 4、同样的换 HSE 泛函进行一次 SCF 计算，输出所需的各种量
 
 参数同 Host ，但是开启自旋
@@ -249,7 +250,7 @@ atom.config # 结构文件
 
 检查 SPIN 2，861号能级也被占据，能级相同，感觉可以不开自旋...
 
-同时可以看一下 VBM 与 CBM 的波函数，也有其特点，分别是 860 和 862号，如下
+同时可以看一下 VBM 与 CBM 的波函数，也有其特点，分别是 860 和 862号
 ```
 (base) [11:48:50] ~/Work/Vo@SiO2/Vo_q0 $ echo -e "1\nOUT.WG\natom.config\n860\n" | plot_wg.x  # 这个指令更便捷
  there are            1  kpoints
@@ -263,7 +264,7 @@ atom.config # 结构文件
  real part of PSI is written in REAL_PSI.xsf
  imaginary part of PSI is written in IMAG_PSI.xsf
 ```
-
+### +1 Vo@Host 结构优化
 5、此时的缺陷为中性，上面占据一个电子（其实是两个），可以移走一个电子，使用参数
 ```
 NUM_ELECTRON =   1722.00000000000
@@ -300,7 +301,7 @@ out.force = t
 out.stress = t
 out.vatom = f
 ```
-
+### +1 Vo@Host SCF计算
 6、结构优化后使用 HSE 进行 SCF 计算，输出所需结果
 ```
 16 1
@@ -359,13 +360,13 @@ SPIN 2
 863      8.5865   0.00000
 ```
 此处自旋就分开了，检查一下这些态的波函数
-
+### 化学势计算
 7、化学势的计算
 
 这里只需要计算 O 的化学势
 
 > Todo
-
+### 数据处理
 8、数据处理
 
 到此为止，就计算了 Host 的数据，中性态 Vo@Host 的数据，+1态 Vo@Host 的数据，以及需要用到的化学势，将计算结果整理成这样的目录结构
@@ -497,4 +498,115 @@ Gap = 8.8 eV
 ======================================================================
   完成
 ======================================================================
+```
+
+![](../figs/20260716_defect_tutorial/E_formation_Vo.png)
+
+### CCD(Configurational Coordinate Diagram)和重组能
+
+Xiao, Y. et al. Anharmonic multi-phonon nonradiative transition: An ab initio calculation approach. Sci. China Phys. Mech. Astron. 63, 277312 (2020).
+
+
+>教程 ： https://www.pwmat.com/modulefiles/pwmat-resource/module-download7/pdf/anharmonic%20multi-phonon%20nonradiative%20transition.pdf
+
+![](../figs/20260716_defect_tutorial/ccd.png)
+
+一个典型的 CCD 如图所示，上面我们计算出了 $\Delta E_{0/+1}$，这里的待计算数据有 $\lambda_{+1}/\lambda_{0}$、$dE$，为了获得这些数据还需要进行两个计算：
+
+1、$0 \space state$ 下 $Q_{+1}$ 的能量
+
+2、$+1 \space state$ 下 $Q_{0}$ 的能量
+
+这是两个非平衡结构的能量，所以只需要进行两次 SCF 计算即可
+
+1、使用上面 +1 价态缺陷的结构，但是电子数修改为和中性态一致，然后执行 SCF 计算
+```
+16 1
+
+job = scf 
+
+# scf
+rho_error = 1.0e-5
+e_error = 0.0 # 1.0e-5
+wg_error = 0.0
+ecut = 50
+ecut2 = 200
+mp_n123 = 1 1 1 0 0 0 0 
+
+xcfunctional = hse
+hse_omega = 0.2
+hse_alpha = 0.5
+hse_beta = 0.0
+
+# input
+in.atom = atom.config
+spin = 2 
+
+## pseudo potential
+in.psp1 = Si.SG15.PBE.UPF
+in.psp2 = O.SG15.PBE.UPF
+
+# in.wg = t
+# in.rho = t
+# in.vr = t
+# in.kpt = t
+
+# output
+out.wg = t
+out.rho = t
+out.vr = t
+out.force = t
+out.stress = t
+out.vatom = t
+```
+提取能量
+```
+(base) [11:29:09] ~/Work/Vo@SiO2/Q+1_0state $ grep E_tot REPORT
+...
+ E_tot(eV)            = -.10520566445381E+06    -.4249E-07
+ E_tot(eV)            = -.10520566446446E+06    -.1065E-04
+ E_tot(eV)    = -.10520566446446E+06    -.1065E-04
+ E_tot(Ryd)   = -.77324737804341E+04    -.3915E-06
+ Energy PV (external_Pressure * Volume)(eV, not included in E_tot) =      0.00000000000000
+```
+2、使用上面 0 价态缺陷的结构，但是电子数修改为和 +1 态一致，然后执行 SCF 计算
+```
+16 1
+
+job = scf 
+
+# scf
+rho_error = 1.0e-5
+e_error = 0.0 # 1.0e-5
+wg_error = 0.0
+ecut = 50
+ecut2 = 200
+mp_n123 = 1 1 1 0 0 0 0 
+
+xcfunctional = hse
+hse_omega = 0.2
+hse_alpha = 0.5
+hse_beta = 0.0
+
+# input
+in.atom = atom.config
+NUM_ELECTRON =   1721.00000000000 # 去掉一个电子
+spin = 2 
+
+## pseudo potential
+in.psp1 = Si.SG15.PBE.UPF
+in.psp2 = O.SG15.PBE.UPF
+
+# in.wg = t
+# in.rho = t
+# in.vr = t
+# in.kpt = t
+
+# output
+out.wg = t
+out.rho = t
+out.vr = t
+out.force = t
+out.stress = t
+out.vatom = t
 ```
