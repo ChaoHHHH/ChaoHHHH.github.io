@@ -631,10 +631,48 @@ $$
 
 $$
 \begin{aligned}
-\lambda_{0} &= E(+1 state, Q_{0}) - E(+1 state, Q_{+1}) \\
+\lambda_{1} &= E(+1 state, Q_{0}) - E(+1 state, Q_{+1}) \\
 &= -105207.68617 - (-105209.42473)\\
 &= 1.739 \space eV
 \end{aligned}
 $$
 
-过于一致了吧，我的非谐效应去哪了？
+过于一致了吧，非谐效应去哪了？
+
+下面使用 PBE 计算 $\lambda$，把上面四个单点的计算全部换成 PBE SCF 就可以，结果如下
+```
+0 state，Q0 ：-.10523364404757E+06
++1 state，Q+1 ：-.10523606808494E+06
+0 state，Q+1 ：-.10523201030564E+06
++1 state，Q0 ：-.10523575746114E+06
+```
+$$
+\begin{aligned}
+\lambda_{0} &= E(0 state, Q_{+1}) - E(0 state, Q_{0}) \\
+&= -105232.010301 - (-105233.64405)\\
+&= 1.634 \space eV
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\lambda_{1} &= E(+1 state, Q_{0}) - E(+1 state, Q_{+1}) \\
+&= -105235.75746 - (-105236.068085)\\
+&= 0.311 \space eV
+\end{aligned}
+$$
+
+在绘制 CCD 图之前，还需要计算一下 $\Delta Q$，这里采用一种简单的近似
+
+Yuan J., Zhang C., Cui Y. & Deng H. Development and frontiers of the theory on non-radiative multi-phonon transitions: From physical insights to first-principles calculations. Acta Phys. Sin. 75, 0 (2026).
+
+
+$$(\Delta Q)^2 = \sum_{\alpha, t} m_{\alpha} \left( R_{\alpha t}^{(i)} - R_{\alpha t}^{(j)} \right)^2$$
+
+$\Delta Q$：一维广义坐标的位移量
+
+$m_{\alpha}$：第 $\alpha$ 个原子的质量
+
+$R_{\alpha t}^{(i)}$：初态（$i$）中，第 $\alpha$ 个原子沿方向 $t$（如 $x, y, z$）的平衡位置坐标
+
+$R_{\alpha t}^{(j)}$：末态（$j$）中，第 $\alpha$ 个原子沿方向 $t$ 的平衡位置坐标
