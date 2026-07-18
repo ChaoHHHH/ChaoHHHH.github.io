@@ -646,6 +646,7 @@ $$
 0 state，Q+1 ：-.10523201030564E+06
 +1 state，Q0 ：-.10523575746114E+06
 ```
+
 $$
 \begin{aligned}
 \lambda_{0} &= E(0 state, Q_{+1}) - E(0 state, Q_{0}) \\
