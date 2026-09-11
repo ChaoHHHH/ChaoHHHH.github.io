@@ -663,6 +663,9 @@ $$
 \end{aligned}
 $$
 
+需要检查一下 OUT.OCC 中的占据情况
+
+
 在绘制 CCD 图之前，还需要计算一下 $\Delta Q$，这里采用一种简单的近似
 
 Yuan J., Zhang C., Cui Y. & Deng H. Development and frontiers of the theory on non-radiative multi-phonon transitions: From physical insights to first-principles calculations. Acta Phys. Sin. 75, 0 (2026).
